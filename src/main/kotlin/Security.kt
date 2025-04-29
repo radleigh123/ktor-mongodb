@@ -16,7 +16,7 @@ import java.io.File
 import org.slf4j.event.*
 
 fun Application.configureSecurity() {
-    install(Authentication) {
+    /*install(Authentication) {
         firebase {
             adminFile = File("path/to/admin/file.json")
             realm = "My Server"
@@ -24,5 +24,5 @@ fun Application.configureSecurity() {
                 MyAuthenticatedUser(id = token.uid)
             }
         }
-    }
+    }*/
 }

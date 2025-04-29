@@ -12,6 +12,10 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
+import org.bson.Document
+import org.bson.codecs.pojo.annotations.BsonId
+import org.bson.types.ObjectId
 import java.io.File
 import org.slf4j.event.*
 
@@ -19,6 +23,16 @@ fun Application.configureDatabases() {
     val mongoDatabase = connectToMongoDB()
     val carService = CarService(mongoDatabase)
     routing {
+        get("/users") {
+            val collection = mongoDatabase.getCollection("users")
+            val user = collection.find().first()
+            if (user != null) {
+                var pass = "test123"
+                call.respond(user.toJson())
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        }
         // Create car
         post("/cars") {
             val car = call.receive<Car>()
@@ -73,13 +87,14 @@ fun Application.connectToMongoDB(): MongoDatabase {
     val host = environment.config.tryGetString("db.mongo.host") ?: "127.0.0.1"
     val port = environment.config.tryGetString("db.mongo.port") ?: "27017"
     val maxPoolSize = environment.config.tryGetString("db.mongo.maxPoolSize")?.toInt() ?: 20
-    val databaseName = environment.config.tryGetString("db.mongo.database.name") ?: "myDatabase"
+    val databaseName = environment.config.tryGetString("db.mongo.database.name") ?: "users"
 
     val credentials = user?.let { userVal -> password?.let { passwordVal -> "$userVal:$passwordVal@" } }.orEmpty()
-    val uri = "mongodb://$credentials$host:$port/?maxPoolSize=$maxPoolSize&w=majority"
+//    val uri = "mongodb://$credentials$host:$port/?maxPoolSize=$maxPoolSize&w=majority"
+     val uri = "mongodb+srv://admin:123@envirocluster.ziwxmi9.mongodb.net/?retryWrites=true&w=majority&appName=EnviroCluster"
 
     val mongoClient = MongoClients.create(uri)
-    val database = mongoClient.getDatabase(databaseName)
+    val database = mongoClient.getDatabase("enviro")
 
     monitor.subscribe(ApplicationStopped) {
         mongoClient.close()
