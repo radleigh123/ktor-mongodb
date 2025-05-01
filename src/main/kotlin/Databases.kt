@@ -1,5 +1,6 @@
 package com.capstone
 
+import com.capstone.auth.verifyToken
 import com.kborowy.authprovider.firebase.firebase
 import com.mongodb.client.*
 import io.ktor.http.*
@@ -20,9 +21,33 @@ import java.io.File
 import org.slf4j.event.*
 
 fun Application.configureDatabases() {
-    val mongoDatabase = connectToMongoDB()
+    val mongoDatabase = connectToMongoDB() // TODO - refactor this
     val carService = CarService(mongoDatabase)
     routing {
+        get("/users/{name}") {
+            val name = call.parameters["name"] ?: throw IllegalArgumentException("No name found")
+            val collection = mongoDatabase.getCollection("users")
+            val user = collection.find(Document("name", name)).first()
+            if (user != null) {
+                call.respond(user.toJson())
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        }
+        post("/users/verify") {
+            val idToken = call.receive<Map<String, String>>()["idToken"]
+                ?: return@post call.respond(mapOf("error" to "Invalid token"))
+
+            val uid = verifyToken(idToken)
+
+            if (uid != null) {
+                call.respond(mapOf("success" to true, "uid" to uid))
+//                call.respond(uid.toString())
+            } else {
+                call.respond(mapOf("error" to "Invalid token"))
+            }
+        }
+
         get("/users") {
             val collection = mongoDatabase.getCollection("users")
             val user = collection.find().first()
@@ -89,6 +114,7 @@ fun Application.connectToMongoDB(): MongoDatabase {
     val maxPoolSize = environment.config.tryGetString("db.mongo.maxPoolSize")?.toInt() ?: 20
     val databaseName = environment.config.tryGetString("db.mongo.database.name") ?: "users"
 
+    // TODO: review and refactor code
     val credentials = user?.let { userVal -> password?.let { passwordVal -> "$userVal:$passwordVal@" } }.orEmpty()
 //    val uri = "mongodb://$credentials$host:$port/?maxPoolSize=$maxPoolSize&w=majority"
      val uri = "mongodb+srv://admin:123@envirocluster.ziwxmi9.mongodb.net/?retryWrites=true&w=majority&appName=EnviroCluster"
