@@ -1,5 +1,6 @@
 package com.capstone
 
+import com.capstone.auth.initFirebase
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
@@ -8,6 +9,7 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
 //    configureSecurity()
+    initFirebase()
     configureMonitoring()
     configureSerialization()
     configureDatabases()
