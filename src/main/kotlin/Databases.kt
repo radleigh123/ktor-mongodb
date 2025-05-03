@@ -1,6 +1,10 @@
 package com.capstone
 
 import com.capstone.auth.verifyToken
+import com.capstone.di.userModule
+import com.capstone.model.User
+import com.capstone.repository.UserRepository
+import com.capstone.services.UserService
 import com.kborowy.authprovider.firebase.firebase
 import com.mongodb.client.*
 import io.ktor.http.*
@@ -19,17 +23,31 @@ import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.types.ObjectId
 import java.io.File
 import org.slf4j.event.*
+import org.koin.core.context.startKoin
+import org.koin.ktor.ext.get
+import org.koin.ktor.plugin.Koin
 
 fun Application.configureDatabases() {
-    val mongoDatabase = connectToMongoDB() // TODO - refactor this
-    val carService = CarService(mongoDatabase)
+    // Start Koin and load modules
+    // Empty module for now
+    install(Koin) {
+        modules(userModule)
+    }
+
+    val mongoDatabase = connectToMongoDB()
+    val carService = CarService(mongoDatabase) // Initialize CarService with MongoDB
+    val collection: MongoCollection<User> = mongoDatabase.getCollection("users", User::class.java)
+    val userRepository = UserRepository(collection)
+    val userService = UserService(userRepository)
+    
+//    val userService = get<UserService>() // Retrieve UserService from Koin
+
     routing {
         get("/users/{name}") {
             val name = call.parameters["name"] ?: throw IllegalArgumentException("No name found")
-            val collection = mongoDatabase.getCollection("users")
-            val user = collection.find(Document("name", name)).first()
+            val user = userService.getUserById(name) // Use UserService
             if (user != null) {
-                call.respond(user.toJson())
+                call.respond(user)
             } else {
                 call.respond(HttpStatusCode.NotFound)
             }
@@ -51,6 +69,7 @@ fun Application.configureDatabases() {
         get("/users") {
             val collection = mongoDatabase.getCollection("users")
             val user = collection.find().first()
+
             if (user != null) {
                 var pass = "test123"
                 call.respond(user.toJson())
@@ -107,24 +126,38 @@ fun Application.configureDatabases() {
  * @returns [MongoDatabase] instance
  * */
 fun Application.connectToMongoDB(): MongoDatabase {
-    val user = environment.config.tryGetString("db.mongo.user")
-    val password = environment.config.tryGetString("db.mongo.password")
+    val user = System.getenv("DB_MONGO_USER") ?: "default"
+    val password = System.getenv("DB_MONGO_PASSWORD") ?: "default123"
     val host = environment.config.tryGetString("db.mongo.host") ?: "127.0.0.1"
     val port = environment.config.tryGetString("db.mongo.port") ?: "27017"
     val maxPoolSize = environment.config.tryGetString("db.mongo.maxPoolSize")?.toInt() ?: 20
-    val databaseName = environment.config.tryGetString("db.mongo.database.name") ?: "users"
+    val databaseName = environment.config.tryGetString("db.mongo.database.name") ?: "myDatabase"
 
-    // TODO: review and refactor code
-    val credentials = user?.let { userVal -> password?.let { passwordVal -> "$userVal:$passwordVal@" } }.orEmpty()
-//    val uri = "mongodb://$credentials$host:$port/?maxPoolSize=$maxPoolSize&w=majority"
-     val uri = "mongodb+srv://admin:123@envirocluster.ziwxmi9.mongodb.net/?retryWrites=true&w=majority&appName=EnviroCluster"
+    val credentials = user?.let { userVal -> password?.let { passwordVal -> "$userVal:$passwordVal" } }.orEmpty()
+
+    // TODO: REMOVE THIS AFTER TESTING
+    println("""
+        MongoDB connection parameters:
+        user: $user
+        password: $password
+        credentials: $credentials
+        host: $host
+        port: $port
+        maxPoolSize: $maxPoolSize
+        databaseName: $databaseName
+    """.trimIndent())
+
+//    val uri = "mongodb://$credentials$host:$port/?maxPoolSize=$maxPoolSize&w=majority" // uncomment for local MongoDB
+    val uri = "mongodb+srv://$credentials@$host/?retryWrites=true&w=majority&appName=EnviroCluster" // uncomment for MongoDB Atlas
 
     val mongoClient = MongoClients.create(uri)
-    val database = mongoClient.getDatabase("enviro")
+    val database = mongoClient.getDatabase(databaseName)
 
     monitor.subscribe(ApplicationStopped) {
+        println("Closing MongoDB connection...")
         mongoClient.close()
     }
 
     return database
 }
+

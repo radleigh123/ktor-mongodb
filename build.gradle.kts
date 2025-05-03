@@ -37,6 +37,8 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml")
     implementation("io.ktor:ktor-serialization-gson:3.1.2")
     implementation("com.google.firebase:firebase-admin:9.4.3")
+    implementation("io.insert-koin:koin-ktor:4.1.0-Beta8")
+    implementation("io.insert-koin:koin-logger-slf4j:4.1.0-Beta8")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

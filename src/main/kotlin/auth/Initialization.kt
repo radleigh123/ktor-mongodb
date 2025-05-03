@@ -7,8 +7,9 @@ import java.io.File
 import java.io.FileInputStream
 
 fun initFirebase() {
-//    val serviceAccount = FileInputStream("src/main/resources/firebase-service-account.json")
-    val serviceAccount = FileInputStream("src/main/kotlin/auth/easeplan-7594d-firebase-adminsdk-fbsvc-49ed1b6a7b.json")
+    val serviceAccount = FileInputStream(System.getenv("AUTH_FIREBASE_SERVICE_KEY"))
+    // TODO: REMOVE THIS LINE AFTER TESTING
+    println("Service Account: ${System.getenv("AUTH_FIREBASE_SERVICE_KEY")}")
 
     val options = FirebaseOptions.builder()
         .setCredentials(GoogleCredentials.fromStream(serviceAccount))

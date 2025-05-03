@@ -1,23 +1,21 @@
 package com.capstone.services
 
 import com.capstone.model.User
-import com.mongodb.client.MongoCollection
-import com.mongodb.client.MongoDatabase
-import com.mongodb.client.model.Filters
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.bson.Document
-import org.bson.types.ObjectId
+import com.capstone.repository.UserRepository
 
-class UserService(private val database: MongoDatabase) {
-    private val collection: MongoCollection<Document>
+class UserService(
+    private val userRepository: UserRepository
+) {
+    // Redundant
+    /*private val collection: MongoCollection<Document>
 
     init {
         database.createCollection("users")
         collection = database.getCollection("users")
-    }
+    }*/
 
-    suspend fun createUser(user: User): String = withContext(Dispatchers.IO) {
+    // Redundant 'UserRepository' has already been created
+    /*suspend fun createUser(user: User): String = withContext(Dispatchers.IO) {
         val doc = user.toDocument()
         collection.insertOne(doc)
         doc["_id"].toString()
@@ -33,5 +31,11 @@ class UserService(private val database: MongoDatabase) {
 
     suspend fun deleteUser(id: String): Document? = withContext(Dispatchers.IO) {
         collection.findOneAndDelete(Filters.eq("_id", ObjectId(id)))
-    }
+    }*/
+
+    suspend fun createUser(user: User) = userRepository.create(user)
+    suspend fun getUserById(id: String) = userRepository.read(id)
+    suspend fun updateUser(id: String, user: User) = userRepository.update(id, user)
+    suspend fun deleteUser(id: String) = userRepository.delete(id)
+
 }
