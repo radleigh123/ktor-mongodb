@@ -16,17 +16,13 @@ class UserRepository(
         return@withContext user.id
     }
 
-/*
     suspend fun getAllUsers(): List<User> = withContext(Dispatchers.IO) {
-        collection.find().map { User.fromDocument(it) }.toList()
+        collection.find().toList()
     }
-*/
 
     suspend fun read(id: String): User? = withContext(Dispatchers.IO) {
 //        collection.find(Filters.eq("_id", ObjectId(id))).first()?.let(User::fromDocument)
-        collection.find(
-            Filters.eq("_id", ObjectId(id))
-        ).firstOrNull()
+        collection.find(Filters.eq("_id", ObjectId(id))).first()
     }
 
     suspend fun update(id: String, user: User): User? = withContext(Dispatchers.IO) {

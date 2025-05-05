@@ -14,15 +14,11 @@ data class User(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
-    fun toDocument(): Document {
-        return Document.parse(Json.encodeToString(this))
-    }
+    fun toDocument(): Document = Document.parse(Json.encodeToString(this))
 
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun fromDocument(document: Document): User {
-            return Json.decodeFromString(document.toJson())
-        }
+        fun fromDocument(document: Document): User = Json.decodeFromString(document.toJson())
     }
 }

@@ -1,6 +1,7 @@
 package com.capstone
 
 import com.capstone.auth.verifyToken
+import com.capstone.controller.UserController
 import com.capstone.di.userModule
 import com.capstone.model.User
 import com.capstone.repository.UserRepository
@@ -26,6 +27,7 @@ import org.slf4j.event.*
 import org.koin.core.context.startKoin
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.Koin
+import org.koin.ktor.plugin.koin
 
 fun Application.configureDatabases() {
     // Start Koin and load modules
@@ -35,38 +37,13 @@ fun Application.configureDatabases() {
     }
 
     val mongoDatabase = connectToMongoDB()
+
     val carService = CarService(mongoDatabase) // Initialize CarService with MongoDB
-    val collection: MongoCollection<User> = mongoDatabase.getCollection("users", User::class.java)
-    val userRepository = UserRepository(collection)
-    val userService = UserService(userRepository)
-    
-//    val userService = get<UserService>() // Retrieve UserService from Koin
+
+    val userController = get<UserController>()
 
     routing {
-        get("/users/{name}") {
-            val name = call.parameters["name"] ?: throw IllegalArgumentException("No name found")
-            val user = userService.getUserById(name) // Use UserService
-            if (user != null) {
-                call.respond(user)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-        post("/users/verify") {
-            val idToken = call.receive<Map<String, String>>()["idToken"]
-                ?: return@post call.respond(mapOf("error" to "Invalid token"))
-
-            val uid = verifyToken(idToken)
-
-            if (uid != null) {
-                call.respond(mapOf("success" to true, "uid" to uid))
-//                call.respond(uid.toString())
-            } else {
-                call.respond(mapOf("error" to "Invalid token"))
-            }
-        }
-
-        get("/users") {
+        get("/usersz") {
             val collection = mongoDatabase.getCollection("users")
             val user = collection.find().first()
 
@@ -77,6 +54,15 @@ fun Application.configureDatabases() {
                 call.respond(HttpStatusCode.NotFound)
             }
         }
+
+        get("/users") {
+            userController.getAllUsers(call)
+        }
+
+        get("/users/{id}") {
+            userController.getUserById(call)
+        }
+
         // Create car
         post("/cars") {
             val car = call.receive<Car>()
