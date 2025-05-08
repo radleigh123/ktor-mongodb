@@ -1,56 +1,30 @@
-package com.capstone
+package com.capstone.plugins
 
-import com.capstone.auth.verifyToken
-import com.kborowy.authprovider.firebase.firebase
+import com.capstone.CarService
+import com.capstone.controller.UserController
+import com.capstone.repository.UserRepository
+import com.capstone.services.UserService
 import com.mongodb.client.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
 import io.ktor.server.config.*
-import io.ktor.server.plugins.calllogging.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.serialization.Serializable
-import org.bson.Document
-import org.bson.codecs.pojo.annotations.BsonId
-import org.bson.types.ObjectId
-import java.io.File
-import org.slf4j.event.*
 
 fun Application.configureDatabases() {
-    val mongoDatabase = connectToMongoDB() // TODO - refactor this
-    val carService = CarService(mongoDatabase)
+    val mongoDatabase = connectToMongoDB()
+
+    val carService = CarService(mongoDatabase) // Initialize CarService with MongoDB
+
+    val userRepository = UserRepository(mongoDatabase.getCollection(environment.config.tryGetString("db.mongo.collection.users") ?: "users"))
+    val userService = UserService(userRepository)
+    val userController = UserController(userService)
+
     routing {
-        get("/users/{name}") {
-            val name = call.parameters["name"] ?: throw IllegalArgumentException("No name found")
-            val collection = mongoDatabase.getCollection("users")
-            val user = collection.find(Document("name", name)).first()
-            if (user != null) {
-                call.respond(user.toJson())
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-        post("/users/verify") {
-            val idToken = call.receive<Map<String, String>>()["idToken"]
-                ?: return@post call.respond(mapOf("error" to "Invalid token"))
-
-            val uid = verifyToken(idToken)
-
-            if (uid != null) {
-                call.respond(mapOf("success" to true, "uid" to uid))
-//                call.respond(uid.toString())
-            } else {
-                call.respond(mapOf("error" to "Invalid token"))
-            }
-        }
-
-        get("/users") {
+        get("/usersz") {
             val collection = mongoDatabase.getCollection("users")
             val user = collection.find().first()
+
             if (user != null) {
                 var pass = "test123"
                 call.respond(user.toJson())
@@ -58,7 +32,20 @@ fun Application.configureDatabases() {
                 call.respond(HttpStatusCode.NotFound)
             }
         }
-        // Create car
+
+        get("/users") {
+            userController.getAllUsers(call)
+        }
+
+        get("/user/{id}") {
+            userController.getUserById(call)
+        }
+
+        post("/user") {
+            userController.createUser(call)
+        }
+
+        /*// Create car
         post("/cars") {
             val car = call.receive<Car>()
             val id = carService.create(car)
@@ -85,7 +72,7 @@ fun Application.configureDatabases() {
             carService.delete(id)?.let {
                 call.respond(HttpStatusCode.OK)
             } ?: call.respond(HttpStatusCode.NotFound)
-        }
+        }*/
     }
 }
 
@@ -107,24 +94,39 @@ fun Application.configureDatabases() {
  * @returns [MongoDatabase] instance
  * */
 fun Application.connectToMongoDB(): MongoDatabase {
-    val user = environment.config.tryGetString("db.mongo.user")
-    val password = environment.config.tryGetString("db.mongo.password")
+    val user = System.getenv("DB_MONGO_USER") ?: "default"
+    val password = System.getenv("DB_MONGO_PASSWORD") ?: "default123"
     val host = environment.config.tryGetString("db.mongo.host") ?: "127.0.0.1"
     val port = environment.config.tryGetString("db.mongo.port") ?: "27017"
     val maxPoolSize = environment.config.tryGetString("db.mongo.maxPoolSize")?.toInt() ?: 20
-    val databaseName = environment.config.tryGetString("db.mongo.database.name") ?: "users"
+    val databaseName = environment.config.tryGetString("db.mongo.database.name") ?: "myDatabase"
 
-    // TODO: review and refactor code
-    val credentials = user?.let { userVal -> password?.let { passwordVal -> "$userVal:$passwordVal@" } }.orEmpty()
-//    val uri = "mongodb://$credentials$host:$port/?maxPoolSize=$maxPoolSize&w=majority"
-     val uri = "mongodb+srv://admin:123@envirocluster.ziwxmi9.mongodb.net/?retryWrites=true&w=majority&appName=EnviroCluster"
+    val credentials = user?.let { userVal -> password?.let { passwordVal -> "$userVal:$passwordVal" } }.orEmpty()
+
+    // TODO: REMOVE THIS AFTER TESTING
+    println("""
+        MongoDB connection parameters:
+        user: $user
+        password: $password
+        credentials: $credentials
+        host: $host
+        port: $port
+        maxPoolSize: $maxPoolSize
+        databaseName: $databaseName
+    """.trimIndent())
+
+//    val uri = "mongodb://$credentials$host:$port/?maxPoolSize=$maxPoolSize&w=majority" // uncomment for local MongoDB
+    val uri = "mongodb+srv://$credentials@$host/?retryWrites=true&w=majority&appName=EnviroCluster" // uncomment for MongoDB Atlas
 
     val mongoClient = MongoClients.create(uri)
-    val database = mongoClient.getDatabase("enviro")
+    val database = mongoClient.getDatabase(databaseName)
 
     monitor.subscribe(ApplicationStopped) {
+        println("Closing MongoDB connection...")
         mongoClient.close()
     }
 
     return database
 }
+
+

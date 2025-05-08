@@ -4,3 +4,19 @@ ktor:
       - com.capstone.ApplicationKt.module
   deployment:
     port: 8080
+
+db:
+  mongo:
+    host: envirocluster.ziwxmi9.mongodb.net
+    port: 27017
+    maxPoolSize: 20
+    minPoolSize: 5
+    database:
+        name: enviro
+        collection:
+          - users
+          - notifications
+          - devices
+          - locations
+          - routes
+          - preferences
