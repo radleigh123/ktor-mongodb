@@ -1,9 +1,11 @@
 package com.capstone.controller
 
+import com.capstone.model.User
 import com.capstone.services.UserService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.log
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 
 class UserController(
@@ -17,6 +19,17 @@ class UserController(
         } catch (e: Exception) {
             call.application.log.error("Error fetching users: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Error fetching users")
+        }
+    }
+
+    suspend fun createUser(call: ApplicationCall) {
+        try {
+            val user = call.receive<User>()
+            val id = userService.createUser(user)
+            call.respond(HttpStatusCode.Created, mapOf("message" to "User created", "id" to id))
+        } catch (e: Exception) {
+            call.application.log.error("Error creating user: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to "Failed to create user"))
         }
     }
 

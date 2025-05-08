@@ -9,31 +9,27 @@ import org.bson.Document
 import org.bson.types.ObjectId
 
 class UserRepository(
-    private val collection: MongoCollection<User>
+    private val collection: MongoCollection<Document>
 ) {
     suspend fun create(user: User): String = withContext(Dispatchers.IO) {
-        collection.insertOne(user)
-        return@withContext user.id
-    }
-
-    suspend fun getAllUsers(): List<User> = withContext(Dispatchers.IO) {
-        collection.find().toList()
+        val doc = user.toDocument()
+        collection.insertOne(doc)
+        doc["_id"].toString()
     }
 
     suspend fun read(id: String): User? = withContext(Dispatchers.IO) {
-//        collection.find(Filters.eq("_id", ObjectId(id))).first()?.let(User::fromDocument)
-        collection.find(Filters.eq("_id", ObjectId(id))).first()
+        collection.find(Filters.eq("_id", ObjectId(id))).first()?.let(User::fromDocument)
     }
 
-    suspend fun update(id: String, user: User): User? = withContext(Dispatchers.IO) {
-        collection.findOneAndReplace(
-            Filters.eq("_id", ObjectId(id)), user
-        )
+    suspend fun update(id: String, user: User): Document? = withContext(Dispatchers.IO) {
+        collection.findOneAndReplace(Filters.eq("_id", ObjectId(id)), user.toDocument())
     }
 
-    suspend fun delete(id: String): User? = withContext(Dispatchers.IO) {
-        collection.findOneAndDelete(
-            Filters.eq("_id", ObjectId(id))
-        )
+    suspend fun delete(id: String): Document? = withContext(Dispatchers.IO) {
+        collection.findOneAndDelete(Filters.eq("_id", ObjectId(id)))
+    }
+
+    suspend fun getAllUsers(): List<User> = withContext(Dispatchers.IO) {
+        collection.find().map { User.fromDocument(it) }.toList()
     }
 }

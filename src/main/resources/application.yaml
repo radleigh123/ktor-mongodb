@@ -16,3 +16,7 @@ db:
         collection:
           - users
           - notifications
+          - devices
+          - locations
+          - routes
+          - preferences

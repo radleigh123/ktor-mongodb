@@ -1,46 +1,24 @@
-package com.capstone
+package com.capstone.plugins
 
-import com.capstone.auth.verifyToken
+import com.capstone.CarService
 import com.capstone.controller.UserController
-import com.capstone.di.userModule
-import com.capstone.model.User
 import com.capstone.repository.UserRepository
 import com.capstone.services.UserService
-import com.kborowy.authprovider.firebase.firebase
 import com.mongodb.client.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
 import io.ktor.server.config.*
-import io.ktor.server.plugins.calllogging.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.serialization.Serializable
-import org.bson.Document
-import org.bson.codecs.pojo.annotations.BsonId
-import org.bson.types.ObjectId
-import java.io.File
-import org.slf4j.event.*
-import org.koin.core.context.startKoin
-import org.koin.ktor.ext.get
-import org.koin.ktor.plugin.Koin
-import org.koin.ktor.plugin.koin
 
 fun Application.configureDatabases() {
-    // Start Koin and load modules
-    // Empty module for now
-    install(Koin) {
-        modules(userModule)
-    }
-
     val mongoDatabase = connectToMongoDB()
 
     val carService = CarService(mongoDatabase) // Initialize CarService with MongoDB
 
-    val userController = get<UserController>()
+    val userRepository = UserRepository(mongoDatabase.getCollection(environment.config.tryGetString("db.mongo.collection.users") ?: "users"))
+    val userService = UserService(userRepository)
+    val userController = UserController(userService)
 
     routing {
         get("/usersz") {
@@ -59,11 +37,15 @@ fun Application.configureDatabases() {
             userController.getAllUsers(call)
         }
 
-        get("/users/{id}") {
+        get("/user/{id}") {
             userController.getUserById(call)
         }
 
-        // Create car
+        post("/user") {
+            userController.createUser(call)
+        }
+
+        /*// Create car
         post("/cars") {
             val car = call.receive<Car>()
             val id = carService.create(car)
@@ -90,7 +72,7 @@ fun Application.configureDatabases() {
             carService.delete(id)?.let {
                 call.respond(HttpStatusCode.OK)
             } ?: call.respond(HttpStatusCode.NotFound)
-        }
+        }*/
     }
 }
 
@@ -146,4 +128,5 @@ fun Application.connectToMongoDB(): MongoDatabase {
 
     return database
 }
+
 

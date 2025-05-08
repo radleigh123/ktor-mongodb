@@ -1,17 +1,35 @@
 package com.capstone
 
 import com.capstone.auth.initFirebase
+import com.capstone.plugins.configureSecurity
+import com.capstone.plugins.configureDatabases
+import com.capstone.plugins.configureMonitoring
+import com.capstone.plugins.configureRouting
+import com.capstone.plugins.configureSerialization
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
+import io.ktor.server.auth.Authentication
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
 }
 
 fun Application.module() {
-//    configureSecurity()
+    install(ContentNegotiation) {
+        json()
+    }
+
+/*
+    install(Authentication) {
+        // To be filled on `Security.kt`
+    }
+*/
+
     initFirebase()
+    configureSecurity()
     configureMonitoring()
     configureSerialization()
-    configureDatabases()
     configureRouting()
+    configureDatabases()
 }
