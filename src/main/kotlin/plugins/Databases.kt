@@ -41,12 +41,16 @@ fun Application.configureDatabases() {
             userController.getUserById(call)
         }
 
-        get("/user/uid/{userId}") {
-            userController.getUserByUid(call)
+        get("/user/email/{email}") {
+            userController.getUserByEmail(call)
         }
 
         post("/user") {
             userController.createUser(call)
+        }
+
+        put("/user/uid/{userId}") {
+            userController.updateUserByUid(call)
         }
 
         /*// Create car

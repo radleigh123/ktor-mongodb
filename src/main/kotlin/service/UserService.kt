@@ -43,6 +43,7 @@ class UserService(
 
     suspend fun getAllUsers() = userRepository.getAllUsers()
 
-    suspend fun getUserByUid(userId: String) = userRepository.getUserByUid(userId)
+    suspend fun getUserByEmail(email: String) = userRepository.getUserByEmail(email)
 
+    suspend fun updateUserByUid(uid: String, user: User) = userRepository.updateUserByUid(uid, user)
 }

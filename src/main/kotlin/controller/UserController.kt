@@ -45,15 +45,30 @@ class UserController(
         }
     }
 
-    suspend fun getUserByUid(call: ApplicationCall) {
+    suspend fun getUserByEmail(call: ApplicationCall) {
         try {
-            val userId = call.parameters["userId"] ?: throw IllegalArgumentException("No userId found")
-            userService.getUserByUid(userId)?.let { user ->
+            val email = call.parameters["email"] ?: throw IllegalArgumentException("No email found")
+            userService.getUserByEmail(email)?.let { user ->
                 call.respond(user)
             } ?: call.respond(HttpStatusCode.NotFound, mapOf("message" to "User not found"))
         } catch (e: Exception) {
-            call.application.log.error("Error retrieving user with UID: ${call.parameters["userId"]}", e)
+            call.application.log.error("Error retrieving user with email: ${call.parameters["email"]}", e)
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to "Failed to retrieve user"))
+        }
+    }
+
+    suspend fun updateUserByUid(call: ApplicationCall) {
+        try {
+            val uid = call.parameters["userId"] ?: throw IllegalArgumentException("No User Id found")
+            val user = call.receive<User>()
+            userService.updateUserByUid(uid, user)?.let { updatedDoc ->
+                // Convert the BSON Document (with its ObjectId) into your serializable User
+                val updatedUser = User.fromDocument(updatedDoc)
+                call.respond(HttpStatusCode.OK, updatedUser)
+            }?: call.respond(HttpStatusCode.NotFound, mapOf("message" to "User not found"))
+        } catch (e: Exception) {
+            call.application.log.error("Error updating user with User Id: ${call.parameters["userId"]}", e)
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to "Failed to update user"))
         }
     }
 }

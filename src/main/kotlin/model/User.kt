@@ -1,6 +1,5 @@
 package com.capstone.model
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -80,16 +79,16 @@ DOCUMENT EXAMPLE
 @Serializable
 @JsonIgnoreUnknownKeys
 data class User(
-    val userId: String,
-    val email: String,
-    val name: String,
+    val userId: String? = null,
+    val email: String? = null,
+    val name: String? = null,
     val profilePicture: String? = null,
     val roles: List<String> = listOf("user"),
     val accountStatus: String = "active",
     val activityLog: List<ActivityLog> = listOf(),
     val lastLogin: TimeStamp? = null,
-    val loginProvider: String,
-    val createdAt: TimeStamp,
+    val loginProvider: String = "google",
+    val createdAt: TimeStamp? = null,
     val updatedAt: TimeStamp? = null,
     val physicalAttributes: PhysicalAttributes? = null,
     val contactInfo: ContactInfo? = null,

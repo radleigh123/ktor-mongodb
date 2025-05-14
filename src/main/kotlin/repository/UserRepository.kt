@@ -33,7 +33,11 @@ class UserRepository(
         collection.find().map { User.fromDocument(it) }.toList()
     }
 
-    suspend fun getUserByUid(userId: String): User? = withContext(Dispatchers.IO) {
-        collection.find(Filters.eq("userId", userId)).first()?.let(User::fromDocument)
+    suspend fun getUserByEmail(email: String): User? = withContext(Dispatchers.IO) {
+        collection.find(Filters.eq("email", email)).first()?.let(User::fromDocument)
+    }
+
+    suspend fun updateUserByUid(uid: String, user: User): Document? = withContext(Dispatchers.IO) {
+        collection.findOneAndReplace(Filters.eq("userId", uid), user.toDocument())
     }
 }
