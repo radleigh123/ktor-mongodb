@@ -35,11 +35,14 @@ class UserService(
 
     suspend fun createUser(user: User) = userRepository.create(user)
 
-    suspend fun getAllUsers() = userRepository.getAllUsers()
     suspend fun getUserById(id: String) = userRepository.read(id)
 
     suspend fun updateUser(id: String, user: User) = userRepository.update(id, user)
 
     suspend fun deleteUser(id: String) = userRepository.delete(id)
+
+    suspend fun getAllUsers() = userRepository.getAllUsers()
+
+    suspend fun getUserByUid(userId: String) = userRepository.getUserByUid(userId)
 
 }

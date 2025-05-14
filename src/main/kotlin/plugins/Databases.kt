@@ -41,6 +41,10 @@ fun Application.configureDatabases() {
             userController.getUserById(call)
         }
 
+        get("/user/uid/{userId}") {
+            userController.getUserByUid(call)
+        }
+
         post("/user") {
             userController.createUser(call)
         }

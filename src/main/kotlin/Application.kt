@@ -20,12 +20,7 @@ fun Application.module() {
         json()
     }
 
-/*
-    install(Authentication) {
-        // To be filled on `Security.kt`
-    }
-*/
-
+    // TODO: Duplicate initialization of Firebase
     initFirebase()
     configureSecurity()
     configureMonitoring()

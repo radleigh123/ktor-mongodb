@@ -11,14 +11,15 @@ import io.ktor.server.response.respond
 class UserController(
     private val userService: UserService
 ) {
-    suspend fun getAllUsers(call: ApplicationCall) {
+    suspend fun getUserById(call: ApplicationCall) {
         try {
-            userService.getAllUsers()?.let { users ->
-                call.respond(users)
-            } ?: call.respond(HttpStatusCode.NotFound, mapOf("message" to "No users found"))
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("No ID found")
+            userService.getUserById(id)?.let { user ->
+                call.respond(user)
+            } ?: call.respond(HttpStatusCode.NotFound, mapOf("message" to "User not found"))
         } catch (e: Exception) {
-            call.application.log.error("Error fetching users: ${e.message}")
-            call.respond(HttpStatusCode.InternalServerError, "Error fetching users")
+            call.application.log.error("Error retrieving user with ID: ${call.parameters["id"]}", e)
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to "Failed to retrieve user"))
         }
     }
 
@@ -33,16 +34,26 @@ class UserController(
         }
     }
 
-    suspend fun getUserById(call: ApplicationCall) {
+    suspend fun getAllUsers(call: ApplicationCall) {
         try {
-            val id = call.parameters["id"] ?: throw IllegalArgumentException("No ID found")
-            userService.getUserById(id)?.let { user ->
-                call.respond(user)
-            } ?: call.respond(HttpStatusCode.NotFound, mapOf("message" to "User not found"))
+            userService.getAllUsers()?.let { users ->
+                call.respond(users)
+            } ?: call.respond(HttpStatusCode.NotFound, mapOf("message" to "No users found"))
         } catch (e: Exception) {
-            call.application.log.error("Error retrieving user with ID: ${call.parameters["id"]}", e)
-            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to "Failed to retrieve user"))
+            call.application.log.error("Error fetching users: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, "Error fetching users")
         }
     }
 
+    suspend fun getUserByUid(call: ApplicationCall) {
+        try {
+            val userId = call.parameters["userId"] ?: throw IllegalArgumentException("No userId found")
+            userService.getUserByUid(userId)?.let { user ->
+                call.respond(user)
+            } ?: call.respond(HttpStatusCode.NotFound, mapOf("message" to "User not found"))
+        } catch (e: Exception) {
+            call.application.log.error("Error retrieving user with UID: ${call.parameters["userId"]}", e)
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to "Failed to retrieve user"))
+        }
+    }
 }

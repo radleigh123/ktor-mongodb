@@ -32,4 +32,8 @@ class UserRepository(
     suspend fun getAllUsers(): List<User> = withContext(Dispatchers.IO) {
         collection.find().map { User.fromDocument(it) }.toList()
     }
+
+    suspend fun getUserByUid(userId: String): User? = withContext(Dispatchers.IO) {
+        collection.find(Filters.eq("userId", userId)).first()?.let(User::fromDocument)
+    }
 }
